@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <unordered_map>
 #include <iostream>
-
+#include <fstream>
 
 using namespace std;
 
@@ -32,6 +32,7 @@ int main(int argc, char **argv) {
     char ch;
     string input_file;
     string output_file = "output";
+    int output_num = 1;
 
     while ((ch = getopt(argc, argv, "f:meo:")) != -1){
         switch (ch){
@@ -80,9 +81,8 @@ int main(int argc, char **argv) {
         exit(0);
 
     }
-
-    //res = PQexec(conn,
-        //"update people set phonenumber=\'5055559999\' where id=3");
+    string filename = output_file + to_string(output_num++) + ".cpp";
+    ofstream outputfile(filename);
     query = "SELECT column_name, data_type, character_maximum_length FROM information_schema.columns WHERE table_name = '"+table+"'";
 
     res = PQexec(conn,query.c_str());
@@ -95,8 +95,7 @@ int main(int argc, char **argv) {
 
     rec_count = PQntuples(res);
 
-    printf("We received %d records.\n", rec_count);
-    puts("==========================");
+    outputfile << "struct rec{" << endl;
 
     for (row = 0; row<rec_count; row++) {
         string data_type;
@@ -105,19 +104,18 @@ int main(int argc, char **argv) {
         }
         else if (string(PQgetvalue(res, row, 1)) == "character varying" || string(PQgetvalue(res, row, 1)) == "character")
         {
-            data_type = "char";
+            data_type = "string";
         }
         else{
             data_type = string(PQgetvalue(res, row, 1));
         }
 
         information_schema[string(PQgetvalue(res, row, 0))] = data_type;
-
-        cout << information_schema[string(PQgetvalue(res, row, 0))] << string(PQgetvalue(res, row, 0)) << endl;
-
+        outputfile << "\t" << data_type << "\t" << string(PQgetvalue(res, row, 0)) << endl;
     }
+    outputfile << "}" << endl;
 
-    puts("==========================");
+
 
     PQclear(res);
 
