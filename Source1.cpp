@@ -1,15 +1,77 @@
 #include <postgresql/libpq-fe.h>
-#include <stdio.h>
 #include <string>
 #include <cstdlib>
-int     main() {
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <unordered_map>
+#include <iostream>
+
+
+using namespace std;
+
+
+/*flag*/
+int f_input_file = 0;
+int f_input_manuly = 0;
+int f_execute_output = 0;
+
+
+
+
+static void
+usage(void)
+{
+    (void)fprintf(stderr, "Usage: cs562 [-m (input manuly)] [-o (output query result)] [-f input file name] [-o output file name]\n");
+    exit(EXIT_FAILURE);
+}
+
+
+int main(int argc, char **argv) {
+
+    char ch;
+    string input_file;
+    string output_file = "output";
+
+    while ((ch = getopt(argc, argv, "f:meo:")) != -1){
+        switch (ch){
+        case 'f':
+            f_input_file = 1;
+            f_input_manuly = 0;
+            input_file = optarg;
+            break;
+        case 'm':
+            f_input_file = 0;
+            f_input_manuly = 1;
+            break;
+        case 'e':
+            f_execute_output = 1;
+            break;
+        case 'o':
+            output_file = optarg;
+            break;
+        default:
+            usage();
+        }
+    }
+
+ //   if (argc != optind + 1)
+//        usage();
+
+
+
+
+
+
     PGconn          *conn;
     PGresult        *res;
     int             rec_count;
     int             row;
     int             col;
+    string query;
+    string table = "sales";
 
-
+    unordered_map<string, string> information_schema;
 
     conn = PQconnectdb("dbname=cs562 host=localhost user=postgres password=cs562final");
 
@@ -21,9 +83,9 @@ int     main() {
 
     //res = PQexec(conn,
         //"update people set phonenumber=\'5055559999\' where id=3");
+    query = "SELECT column_name, data_type, character_maximum_length FROM information_schema.columns WHERE table_name = '"+table+"'";
 
-    res = PQexec(conn,
-        "select * from sales");
+    res = PQexec(conn,query.c_str());
 
     if (PQresultStatus(res) != PGRES_TUPLES_OK) {
         puts("We did not get any data!");
@@ -37,11 +99,21 @@ int     main() {
     puts("==========================");
 
     for (row = 0; row<rec_count; row++) {
-        for (col = 0; col<3; col++) {
-            printf("%s\t", PQgetvalue(res, row, col));
-
+        string data_type;
+        if (string(PQgetvalue(res, row, 1)) == "integer"){
+            data_type = "int";
         }
-        puts("");
+        else if (string(PQgetvalue(res, row, 1)) == "character varying" || string(PQgetvalue(res, row, 1)) == "character")
+        {
+            data_type = "char";
+        }
+        else{
+            data_type = string(PQgetvalue(res, row, 1));
+        }
+
+        information_schema[string(PQgetvalue(res, row, 0))] = data_type;
+
+        cout << information_schema[string(PQgetvalue(res, row, 0))] << string(PQgetvalue(res, row, 0)) << endl;
 
     }
 
