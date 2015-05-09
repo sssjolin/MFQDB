@@ -15,10 +15,10 @@
 using namespace std;
 
 
-void writeMFstruct(const vector<string> &selectAttribute, string output_file, unordered_map<string, string> &information_schema){
+void writeMFstruct(const vector<string> &mfstructure, string output_file, unordered_map<string, string> &information_schema){
     ofstream outputfile(output_file, ofstream::app|ofstream::ate);
     outputfile << "struct mf_structure{" << endl;
-    for (auto s : selectAttribute){
+    for (auto s : mfstructure){
         string tmptype = "int";
         if (information_schema.find(s) != information_schema.end())
             tmptype = information_schema[s];
@@ -28,7 +28,6 @@ void writeMFstruct(const vector<string> &selectAttribute, string output_file, un
     outputfile << endl;
     outputfile.close();
 }
-
 
 void writeScan(int groupingVariables, string output_file, 
     unordered_map<string, string> &information_schema,
@@ -53,6 +52,23 @@ void writeScan(int groupingVariables, string output_file,
 
 }
 
+/*
+void writeJudge(int groupingVariables, string output_file,
+    unordered_map<string, string> &information_schema,
+    vector<string> &recVector){
+    outputfile << "void judge(vector<mf_structure> &mfstructs, rec &tmprec,int groupingVariables){" << endl;
+    for (int i = 0; i < groupingVariables; ++i){
+
+
+
+
+
+
+    }
+
+
+}
+*/
 
 int inputparse(string input_file, string output_file, 
     unordered_map<string, string> &information_schema,
@@ -117,10 +133,17 @@ int inputparse(string input_file, string output_file,
     }
     inputfile.close();
 
-    writeMFstruct(selectAttribute, output_file, information_schema);
+    vector<string> mfstructure = generateMFstruct(selectAttribute, fvect);
+
+
+    writeMFstruct(mfstructure, output_file, information_schema);
+    
 
     writeScan(groupingVariables, output_file, information_schema, recVector);
 
+
+
+    //writeJudge();
 
     return 1;
 }
