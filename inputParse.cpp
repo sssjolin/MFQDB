@@ -26,11 +26,37 @@ void writeMFstruct(const vector<string> &selectAttribute, string output_file, un
     }
     outputfile << "}" << endl;
     outputfile << endl;
+    outputfile.close();
 }
 
 
+void writeScan(int groupingVariables, string output_file, 
+    unordered_map<string, string> &information_schema,
+    vector<string> &recVector){
+    ofstream outputfile(output_file, ofstream::app | ofstream::ate);
+    outputfile << "\tfor(int groupingVariables=0; gv<" << groupingVariables << "; ++gv){" << endl;
+    outputfile << "\t\tfor(int i=0; i<rec_count; ++i){" << endl;
+    outputfile << "\t\t\trec tmprec;" << endl;
+    int field_num = 0;
+    for (auto s : recVector){
+        if (information_schema[s] == "string")
+            outputfile << "\t\t\ttmprec."<<s+"= string(PQgetvalue(res, row, "<<field_num<<"));" << endl;
+        else
+            outputfile << "\t\t\ttmprec." << s + "= atoi(PQgetvalue(res, row, " << field_num << "));" << endl;
+        field_num++;
+    }
+    outputfile << "\t\t\tupdateMFStruct(mfstructs,tmprec,groupingVariables);" << endl;
+    outputfile << "\t\t}"<<endl;
+    outputfile << "\t}" << endl;
+    outputfile << endl;
+    outputfile.close();
 
-int inputparse(string input_file, string output_file, unordered_map<string, string> &information_schema){
+}
+
+
+int inputparse(string input_file, string output_file, 
+    unordered_map<string, string> &information_schema,
+    vector<string> &recVector){
     ifstream inputfile(input_file,ifstream::in);
     vector<string> initcmd(6);
     initcmd[0] = "SELECT ATTRIBUTE(S):";
@@ -92,6 +118,8 @@ int inputparse(string input_file, string output_file, unordered_map<string, stri
     inputfile.close();
 
     writeMFstruct(selectAttribute, output_file, information_schema);
+
+    writeScan(groupingVariables, output_file, information_schema, recVector);
 
 
     return 1;

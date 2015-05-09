@@ -3,7 +3,10 @@
 #include <fstream>
 #include <iostream>
 #include <unordered_map>
+#include <vector>
 using namespace std;
-int inputparse(string input_file, string output_file, unordered_map<string, string> &information_schema);
+int inputparse(string input_file, string output_file, 
+    unordered_map<string, string> &information_schema,
+    vector<string> &recVector);
 
 #endif

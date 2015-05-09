@@ -25,7 +25,7 @@ int f_execute_output = 0;
 static void
 usage(void)
 {
-    (void)fprintf(stderr, "Usage: cs562 [-m (input manuly)] [-o (output query result)] [-f input file name] [-o output file name]\n");
+    (void)fprintf(stderr, "Usage: cs562 [-m (input manuly)] [-e (output query result)] [-f input file name] [-o output file name]\n");
     exit(0);
 }
 
@@ -79,9 +79,8 @@ int main(int argc, char **argv) {
     string user = "postgres";
     string password = "cs562final";
     unordered_map<string, string> information_schema;
+    vector<string> recVector;
     string output_file = filename + to_string(output_num++) + ".cpp";
-    ofstream outputfile(output_file);
-    ifstream inputfile(input_file);
     string connection = "dbname=" + dbname + " host=" + host + " user=" + user + " password=" + password;
     conn = PQconnectdb(connection.c_str());
 
@@ -91,7 +90,7 @@ int main(int argc, char **argv) {
 
     }
 
-    query = "SELECT column_name, data_type, character_maximum_length FROM information_schema.columns WHERE table_name = '" + table + "'";
+    query = "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '" + table + "'";
 
     res = PQexec(conn, query.c_str());
 
@@ -101,8 +100,13 @@ int main(int argc, char **argv) {
 
     }
 
-    rec_count = PQntuples(res);
 
+    ofstream outputfile(output_file);
+    outputfile << "#include <stdio.h>" << endl;
+
+    outputfile << "EXEC SQL BEGIN DECLARE SECTION;" << endl;
+
+    rec_count = PQntuples(res);
     outputfile << "struct rec{" << endl;
 
     for (row = 0; row < rec_count; row++) {
@@ -118,16 +122,23 @@ int main(int argc, char **argv) {
             data_type = string(PQgetvalue(res, row, 1));
 
         information_schema[string(PQgetvalue(res, row, 0))] = data_type;
+        recVector.push_back(string(PQgetvalue(res, row, 0)));
         outputfile << "\t" << data_type << "\t" << string(PQgetvalue(res, row, 0)) << endl;
     }
     outputfile << "}" << endl;
     outputfile << endl;
     outputfile.close();
     PQclear(res);
-    inputparse(input_file, output_file, information_schema);
+    inputparse(input_file, output_file, information_schema,recVector);
 
-
-
+    outputfile.open(output_file, ofstream::app | ofstream::ate);
+    outputfile << "EXEC SQL END DECLARE SECTION;" << endl;
+    outputfile << "EXEC SQL INCLUDE sqlca;" << endl<<endl;
+    outputfile << "void output_record();" << endl<<endl;
+    outputfile << "int main(int argc, char* argv[])" << endl;
+    outputfile << "{" << endl;
+    outputfile << "/tEXEC SQL CONNECT TO ["+dbname+"] USER ["+user+"] IDENTIFIED BY ["+password+"];" << endl;
+    outputfile << "/tEXEC SQL WHENEVER sqlerror sqlprint;" << endl;
 
 
     PQfinish(conn);
