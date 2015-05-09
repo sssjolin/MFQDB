@@ -14,6 +14,18 @@
 
 using namespace std;
 
+void selectionHandler(vector<string> &selectCondition, int groupingVariables, 
+    vector<string> &groupingAttributes, vector<string> &mfstructure){
+    vector<vector<string>> conditionCmd(groupingVariables+1, vector<string>());
+    for (auto s : selectCondition){
+        convertConditionToCmd(s, conditionCmd, groupingAttributes, mfstructure);
+    }
+    for (int i = 1; i < conditionCmd.size(); ++i){
+        for (auto s : conditionCmd[i])
+            cout << s << endl;
+    }
+}
+
 
 void writeMFstruct(const vector<string> &mfstructure, string output_file, unordered_map<string, string> &information_schema){
     ofstream outputfile(output_file, ofstream::app|ofstream::ate);
@@ -36,7 +48,7 @@ void writeScan(int groupingVariables, string output_file,
     vector<string> &recVector,
     vector<string> &groupingAttributes){
     ofstream outputfile(output_file, ofstream::app | ofstream::ate);
-    outputfile << "\tfor(int groupingVariables=0; gv<" << groupingVariables << "; ++gv){" << endl;
+    outputfile << "\tfor(int groupingVariables=0; groupingVariables<=" << groupingVariables << "; ++groupingVariables){" << endl;
     outputfile << "\t\tfor(int i=0; i<rec_count; ++i){" << endl;
     outputfile << "\t\t\trec tmprec;" << endl;
     int field_num = 0;
@@ -47,7 +59,7 @@ void writeScan(int groupingVariables, string output_file,
             outputfile << "\t\t\ttmprec." << s + "= atoi(PQgetvalue(res, row, " << field_num << "));" << endl;
         field_num++;
     }
-    outputfile << "\t\t\tif(!mfstructureMap[";
+    outputfile << "\t\t\tif(!groupingVariables&&!mfstructureMap[";
     string combin;
     for (int i = 0; i < groupingAttributes.size(); ++i){
         outputfile << "tmprec." << groupingAttributes[i];
@@ -69,8 +81,9 @@ void writeScan(int groupingVariables, string output_file,
             outputfile << "\t\t\t\tmfstructureMap[tmprec." << s << "].push_back(index);" << endl;
     }
     outputfile << "\t\t\t}" << endl;
+    outputfile << "\t\t\tif(groupingVariables)" << endl;
 
-    outputfile << "\t\t\tupdateMFStruct(mfstructs,tmprec,groupingVariables);" << endl;
+    outputfile << "\t\t\t\tupdateMFStruct(mfstructs,tmprec,groupingVariables);" << endl;
     outputfile << "\t\t}"<<endl;
     outputfile << "\t}" << endl;
     outputfile << endl;
@@ -105,7 +118,7 @@ int inputparse(string input_file, string output_file,
     initcmd[1] = "NUMBER OF GROUPING VARIABLES(n):";
     initcmd[2] = "GROUPING ATTRIBUTES(V):";
     initcmd[3] = "F-VECT([F]):";
-    initcmd[4] = "SELECT CONDITION-VECT([¦Ò]):";
+    initcmd[4] = "SELECT CONDITION-VECT([Ïƒ]):";
     initcmd[5] = "HAVING_CONDITION(G):";
     string cmd;
     int index = 0;
@@ -116,6 +129,7 @@ int inputparse(string input_file, string output_file,
     vector<string> fvect;
     vector<string> selectCondition;
     string havingCondition;
+    vector<string> mfstructure;
     while (!inputfile.eof()){
         getline(inputfile, cmd);
         for (int i = index; i < initcmd.size(); ++i){
@@ -155,8 +169,9 @@ int inputparse(string input_file, string output_file,
     }
     inputfile.close();
 
-    vector<string> mfstructure = generateMFstruct(selectAttribute, fvect);
-
+    mfstructure = generateMFstruct(selectAttribute, fvect);
+    selectionHandler(selectCondition,  groupingVariables,
+        groupingAttributes, mfstructure);
 
     writeMFstruct(mfstructure, output_file, information_schema);
     

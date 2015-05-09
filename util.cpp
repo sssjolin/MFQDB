@@ -33,14 +33,70 @@ void split(string s, vector<string> &v){
 
 vector<string> generateMFstruct(const vector<string> &selectAttribute,const vector<string> &fvect){
     unordered_set<string> mfSet(selectAttribute.begin(),selectAttribute.end());
+    vector<string> MFstructures = selectAttribute;
     for (auto s : fvect){
         string tmp = s;
         if (auto i=tmp.find("avg") != -1){
+            mfSet.insert(tmp);
             tmp.replace(tmp.find("avg"), 3, "sum");
             mfSet.insert(tmp);
             tmp.replace(tmp.find("sum"), 3, "count");
             mfSet.insert(tmp);
         }
     }
-    return vector<string>(mfSet.begin(), mfSet.end());
+    for (auto s : selectAttribute)
+        mfSet.erase(s);
+    for (auto s : mfSet)
+        MFstructures.push_back(s);
+    return MFstructures;
 }
+
+void convertConditionToCmd(string &s, vector<vector<string>> &conditionCmd, 
+    vector<string> &groupingAttributes, vector<string> &mfstructure){
+    int gv = s[0] - '0';
+    size_t found=s.find(",");
+    if (found != string::npos)
+        s.replace(found, 1, "");
+    string mapkey;
+
+    for (auto ga : groupingAttributes){
+        if (s.find("=" + ga) != -1 || s.find("= " + ga) != -1){
+            if (!mapkey.empty())
+                mapkey += "+";
+            mapkey += ga;
+        }
+    }
+
+    string mapcmd = "vector<int> mfstructuresIndex=mfstructureMap[" + mapkey + "];";
+    conditionCmd[gv].push_back(mapcmd);
+
+    vector<string> replaceList({ "and", "&&", "or", "||", "=", "==", "<>", "!=" });
+    for (int i = 0; i < replaceList.size(); i += 2){
+        found = s.find(replaceList[i]);
+        while (found != string::npos){
+            s.replace(found, replaceList[i].size(), replaceList[i+1]);
+            found = s.find(replaceList[i], found + replaceList[i + 1].size());
+        }
+    }
+    string gvs = s.substr(0, 1);
+    found = s.find(gvs);
+    while (found != string::npos){
+        if (found == 0 || s[found - 1] == ' ' || s[found - 1] == '|' || s[found - 1] == '&')
+            s.replace(found, 1, "tmprec");
+        found = s.find(gvs, found + 1);
+    }
+
+
+    for (auto mfAttribute : mfstructure){
+        found = s.find(mfAttribute);
+        while (found != string::npos){
+            if (found == 0 || s[found - 1] != '.')
+                s.insert(found, "mfstructureVector[index].");
+            found = s.find(mfAttribute, found + 1);
+        }
+    }
+
+    conditionCmd[gv].push_back(s);
+}
+
+
