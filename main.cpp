@@ -33,8 +33,8 @@ usage(void)
 int main(int argc, char **argv) {
 
     char ch;
-    string input_file;
-    string output_file = "output";
+    string input_file="input";
+    string filename = "output";
     int output_num = 1;
 
     while ((ch = getopt(argc, argv, "f:meo:")) != -1){
@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
             f_execute_output = 1;
             break;
         case 'o':
-            output_file = optarg;
+            filename = optarg;
             break;
         default:
             usage();
@@ -79,11 +79,11 @@ int main(int argc, char **argv) {
     string user = "postgres";
     string password = "cs562final";
     unordered_map<string, string> information_schema;
-    string filename = output_file + to_string(output_num++) + ".cpp";
-    ofstream outputfile(filename);
+    string output_file = filename + to_string(output_num++) + ".cpp";
+    ofstream outputfile(output_file);
     ifstream inputfile(input_file);
     string connection = "dbname=" + dbname + " host=" + host + " user=" + user + " password=" + password;
-    conn = PQconnectdb(connection);
+    conn = PQconnectdb(connection.c_str());
 
     if (PQstatus(conn) == CONNECTION_BAD) {
         cerr<<"We were unable to connect to the database";
@@ -122,10 +122,9 @@ int main(int argc, char **argv) {
     }
     outputfile << "}" << endl;
     outputfile << endl;
-
+    outputfile.close();
     PQclear(res);
-
-    
+    inputparse(input_file, output_file, information_schema);
 
 
 

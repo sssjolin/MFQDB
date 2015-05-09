@@ -1,6 +1,8 @@
-#ifndef _UTIL_H
-#define _UTIL_H
+#ifndef UTIL_H
+#define UTIL_H
+#include <vector>
+#include <string>
+using namespace std;
+void split(string s,vector<string> &v);
 
-vector<string> split(string s);
-
-#endif _UTIL_H
+#endif
