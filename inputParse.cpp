@@ -24,14 +24,17 @@ void writeMFstruct(const vector<string> &mfstructure, string output_file, unorde
             tmptype = information_schema[s];
         outputfile << "\t" << tmptype << "\t" << s << endl;
     }
-    outputfile << "}" << endl;
+    outputfile << "};" << endl;
+    outputfile << "unordered_map<string,vector<int>> mfstructureMap;"<<endl;
+    outputfile << "vector<mf_structure> mfstructureVector;"<<endl;
     outputfile << endl;
     outputfile.close();
 }
 
 void writeScan(int groupingVariables, string output_file, 
     unordered_map<string, string> &information_schema,
-    vector<string> &recVector){
+    vector<string> &recVector,
+    vector<string> &groupingAttributes){
     ofstream outputfile(output_file, ofstream::app | ofstream::ate);
     outputfile << "\tfor(int groupingVariables=0; gv<" << groupingVariables << "; ++gv){" << endl;
     outputfile << "\t\tfor(int i=0; i<rec_count; ++i){" << endl;
@@ -44,6 +47,29 @@ void writeScan(int groupingVariables, string output_file,
             outputfile << "\t\t\ttmprec." << s + "= atoi(PQgetvalue(res, row, " << field_num << "));" << endl;
         field_num++;
     }
+    outputfile << "\t\t\tif(!mfstructureMap[";
+    string combin;
+    for (int i = 0; i < groupingAttributes.size(); ++i){
+        outputfile << "tmprec." << groupingAttributes[i];
+        combin += "tmprec." + groupingAttributes[i];
+        if (i < groupingAttributes.size() - 1){
+            outputfile << "+";
+            combin += "+";
+        }
+    }
+    outputfile << "]){" << endl;
+    outputfile << "\t\t\t\tmf_structure tmpmfstructure;" << endl;
+    for (auto s : groupingAttributes)
+        outputfile << "\t\t\t\ttmpmfstructure." << s << "=tmprec." << s << ";" << endl;
+    outputfile << "\t\t\t\tmfstructureVector.push_back(tmpmfstructure);" << endl;
+    outputfile << "\t\t\t\tint index=mfstructureVector.size()-1;" << endl;
+    outputfile << "\t\t\t\tmfstructureMap[" << combin << "].push_back(index);" << endl;
+    for (auto s : groupingAttributes){
+        if (groupingAttributes.size()>1)
+            outputfile << "\t\t\t\tmfstructureMap[tmprec." << s << "].push_back(index);" << endl;
+    }
+    outputfile << "\t\t\t}" << endl;
+
     outputfile << "\t\t\tupdateMFStruct(mfstructs,tmprec,groupingVariables);" << endl;
     outputfile << "\t\t}"<<endl;
     outputfile << "\t}" << endl;
@@ -118,12 +144,8 @@ int inputparse(string input_file, string output_file,
                 break;
             case 6:
                 havingCondition = cmd;
-
             }
-
-
         }
-
         iscmd = false;
     }
     
@@ -139,7 +161,7 @@ int inputparse(string input_file, string output_file,
     writeMFstruct(mfstructure, output_file, information_schema);
     
 
-    writeScan(groupingVariables, output_file, information_schema, recVector);
+    writeScan(groupingVariables, output_file, information_schema, recVector, groupingAttributes);
 
 
 

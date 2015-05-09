@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
         recVector.push_back(string(PQgetvalue(res, row, 0)));
         outputfile << "\t" << data_type << "\t" << string(PQgetvalue(res, row, 0)) << endl;
     }
-    outputfile << "}" << endl;
+    outputfile << "};" << endl;
     outputfile << endl;
     outputfile.close();
     PQclear(res);
