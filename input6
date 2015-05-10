@@ -1,0 +1,13 @@
+SELECT ATTRIBUTE(S):
+prod,quant
+NUMBER OF GROUPING VARIABLES(n):
+2
+GROUPING ATTRIBUTES(V):
+prod,quant
+F-VECT([F]):
+_1_count_prod, _2_count_prod
+SELECT CONDITION-VECT([σ]):
+1.prod=prod
+2.prod=prod and 2.quant<quant
+HAVING_CONDITION(G):
+_2_count_prod= _1_count_prod/2

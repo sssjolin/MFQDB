@@ -1,0 +1,157 @@
+g++ -std=c++11 output1.cpp -lpq
+
+EX1:
+drop view IF EXISTS v1 CASCADE;
+drop view IF EXISTS v2 CASCADE;
+drop view IF EXISTS v3 CASCADE;
+
+create view v1 (cust, avg_x) as
+select cust, avg(quant)
+from sales
+where state='NY' and year=1997
+group by cust;
+
+create view v2 (cust, avg_y) as
+select cust, avg(quant)
+from sales
+where state='CT' and year=1997
+group by cust;
+
+create view v3 (cust, avg_z) as
+select cust, avg(quant)
+from sales
+where state='NJ' and year=1997
+group by cust;
+
+select v1.cust, v1.avg_x,v2.avg_y,v3.avg_z
+from v1,v2,v3
+where v1.cust=v2.cust and v2.cust=v3.cust and v1.avg_x>v2.avg_y and v1.avg_x>v3.avg_z
+
+
+
+EX2:
+drop view IF EXISTS v1 CASCADE;
+drop view IF EXISTS v2 CASCADE;
+
+create view  v1(prod, month, sum_1_quant) as
+select prod, month, sum(quant)
+from sales
+where year =1997
+group by prod, month;
+
+
+create view v2 (prod,sum_2_quant) as
+select prod, sum(quant)
+from sales
+where year =1997
+group by prod;
+
+
+select v1.prod, v1.month, v1.sum_1_quant, v2.sum_2_quant, cast(v1.sum_1_quant as double precision) /cast(v2.sum_2_quant as double precision)
+from v1, v2
+where v1.prod = v2.prod;
+
+
+EX3:
+drop view IF EXISTS v1 CASCADE;
+drop view IF EXISTS v2 CASCADE;
+drop view IF EXISTS v3 CASCADE;
+
+create view  v1(cust, month, avg_quant) as
+select cust, month, avg(quant)
+from sales
+where year =1997
+group by cust, month;
+
+
+create view v2 (cust, month, avg_1_quant) as
+select x.cust, x.month, avg(y.quant)
+from sales x, sales y
+where x.year =1997 and y.year=1997 and x.cust=y.cust and x.month>y.month
+group by x.cust, x.month;
+
+create view v3 (cust, month, avg_2_quant) as
+select x.cust, x.month, avg(y.quant)
+from sales x, sales y
+where x.year =1997 and y.year=1997  and x.cust=y.cust and x.month<y.month
+group by x.cust, x.month;
+
+select v1.cust, v1.month, avg_1_quant, avg_quant, avg_2_quant
+from v1, v2, v3
+where v1.cust = v2.cust and v1.month=v2.month and v1.cust=v3.cust and v1.month=v3.month;
+
+
+
+
+EX4: with x.year =1997 and y.year=1997 and, no data match condition
+drop view IF EXISTS v1 CASCADE;
+drop view IF EXISTS v2 CASCADE;
+
+create view v1 (prod, month, avg_1_quant) as
+select x.prod, x.month, avg(y.quant)
+from sales x, sales y
+where  x.prod=y.prod and x.month=y.month-1
+group by x.prod, x.month;
+
+create view v2 (prod, month, avg_2_quant) as
+select x.prod, x.month, avg(y.quant)
+from sales x, sales y
+where x.prod=y.prod and x.month=y.month+1
+group by x.prod, x.month;
+
+select sales.prod, sales.month, count(sales.*)
+from v1, v2, sales
+where sales.prod=v1.prod and sales.prod=v2.prod and sales.month=v1.month and
+	sales.month=v2.month and sales.quant>v1.avg_1_quant and sales.quant>v2.avg_2_quant
+group by sales.prod,sales.month;
+
+
+
+EX5:
+drop view IF EXISTS v1 CASCADE;
+drop view IF EXISTS v2 CASCADE;
+
+
+
+create view v1 (cust, prod, avg_1_quant) as
+select cust, prod, avg(quant)
+from sales
+group by cust,prod;
+
+create view v2 (cust, prod, avg_2_quant) as
+select x.cust, x. prod, avg(y.quant)
+from sales x, sales y
+where x.cust<>y.cust and x.prod=y.prod
+group by x.cust, x.prod;
+
+select v1.cust, v1.prod, v1.avg_1_quant,v2.avg_2_quant
+from v1, v2
+where v1.cust=v2.cust and v1.prod=v2.prod;
+
+
+
+EX6:
+drop view IF EXISTS v1 CASCADE;
+drop view IF EXISTS v2 CASCADE;
+
+
+
+create view v1 (prod, count_1_prod) as
+select prod, count(prod)
+from sales
+group by prod;
+
+create view v2 (prod,quant, count_2_prod) as
+select x.prod, x. quant, count(y.prod)
+from sales x, sales y
+where x.quant>y.quant and x.prod=y.prod
+group by x.prod, x.quant;
+
+select v1.prod, v2.quant
+from v1, v2
+where v1.prod=v2.prod and v1.count_1_prod =v2.count_2_prod *2;
+
+
+
+
+
