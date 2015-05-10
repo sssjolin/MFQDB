@@ -48,6 +48,12 @@ vector<string> generateMFstruct(const vector<string> &selectAttribute,const vect
         mfSet.erase(s);
     for (auto s : mfSet)
         MFstructures.push_back(s);
+    for (int i = 0; i < MFstructures.size();){
+        if (auto found = MFstructures[i].find_first_of("/*+-") != -1)
+            MFstructures.erase(MFstructures.begin() + i);
+        else
+            i++;
+    }
     return MFstructures;
 }
 

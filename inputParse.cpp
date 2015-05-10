@@ -58,11 +58,11 @@ void writeMFstruct(const vector<string> &mfstructure, string output_file, unorde
     ofstream outputfile(output_file, ofstream::app|ofstream::ate);
     outputfile << "struct mf_structure{" << endl;
     for (auto s : mfstructure){
-        string tmptype = "int";
+        string tmptype = "double";
         if (information_schema.find(s) != information_schema.end())
             tmptype = information_schema[s];
         outputfile << "\t" << tmptype << "\t" << s;
-        if (tmptype == "int")
+        if (tmptype == "int"||tmptype=="double")
             outputfile << "=0";
         outputfile<<";"<< endl;
     }
@@ -135,8 +135,16 @@ void writeScan(int groupingVariables, string output_file,
     if (!havingCondition.empty())
         outputfile << "\t\tif(" << havingCondition << ")" << endl;
     outputfile << "\t\t\tcout<<";
-    for (auto s : selectAttribute)
-        outputfile << "mfstructureVector[i]."<<s << "<<\"\\t\\t\"<<";
+    for (auto s : selectAttribute){
+        auto found=s.find_last_of("*+-/");
+        if ( found != -1){
+            string tmp = s;
+            tmp.insert(found+1, "mfstructureVector[i].");
+            outputfile << "mfstructureVector[i]." << tmp << "<<\"\\t\\t\"<<";
+        }
+        else
+            outputfile << "mfstructureVector[i]." << s << "<<\"\\t\\t\"<<";
+    }
     outputfile << "endl;" << endl;
     outputfile << "\t}" << endl;
 
