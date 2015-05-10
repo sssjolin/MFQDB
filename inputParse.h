@@ -7,6 +7,6 @@
 using namespace std;
 int inputparse(string input_file, string output_file, 
     unordered_map<string, string> &information_schema,
-    vector<string> &recVector);
+    vector<string> &recVector, string dbconnection);
 
 #endif

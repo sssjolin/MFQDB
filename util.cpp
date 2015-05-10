@@ -52,7 +52,8 @@ vector<string> generateMFstruct(const vector<string> &selectAttribute,const vect
 }
 
 void convertConditionToCmd(string &s, vector<vector<string>> &conditionCmd, 
-    vector<string> &groupingAttributes, vector<string> &mfstructure){
+    vector<string> &groupingAttributes, vector<string> &mfstructure,
+    unordered_map<string, string> &information_schema){
     int gv = s[0] - '0';
     size_t found=s.find(",");
     if (found != string::npos)
@@ -63,14 +64,17 @@ void convertConditionToCmd(string &s, vector<vector<string>> &conditionCmd,
         if (s.find("=" + ga) != -1 || s.find("= " + ga) != -1){
             if (!mapkey.empty())
                 mapkey += "+";
-            mapkey += ga;
+            if (information_schema[ga]=="string")
+                mapkey += "tmprec." + ga;
+            else
+                mapkey += "to_string(tmprec."+ga+")";
         }
     }
 
     string mapcmd = "vector<int> mfstructuresIndex=mfstructureMap[" + mapkey + "];";
     conditionCmd[gv].push_back(mapcmd);
 
-    vector<string> replaceList({ "and", "&&", "or", "||", "=", "==", "<>", "!=" });
+    vector<string> replaceList({ "and", "&&", "or", "||", "=", "==", "<>", "!=", "'","\"" });
     for (int i = 0; i < replaceList.size(); i += 2){
         found = s.find(replaceList[i]);
         while (found != string::npos){
@@ -78,6 +82,7 @@ void convertConditionToCmd(string &s, vector<vector<string>> &conditionCmd,
             found = s.find(replaceList[i], found + replaceList[i + 1].size());
         }
     }
+
     string gvs = s.substr(0, 1);
     found = s.find(gvs);
     while (found != string::npos){
@@ -100,3 +105,36 @@ void convertConditionToCmd(string &s, vector<vector<string>> &conditionCmd,
 }
 
 
+string functionHandler(string column){
+    string cmd;
+    auto i1 = column.find_first_of("_");
+    if (i1 == -1)
+        return cmd;
+    i1 = column.find_first_of("_",i1+1);
+    auto i2 = column.find_last_of("_");
+    
+    if (i2 == -1)
+        return column + "++;";
+
+    string opt = column.substr(i1+1, i2 - i1-1);
+    
+    
+
+    if (opt == "sum"){
+        cmd = "mfstructureVector[index]."+column + "+=tmprec." + column.substr(i2 + 1) + ";";
+    } 
+    else if (opt == "count"){
+        cmd = "mfstructureVector[index]."+column + "++;";
+    }
+    else if (opt == "max"){
+        cmd = "mfstructureVector[index]." + column + "=max(" + "mfstructureVector[index]."+column + ",tmprec." + column.substr(i2 + 1) + ");";
+    }
+    else if (opt == "min"){
+        cmd = "mfstructureVector[index]." + column + "=min(" + "mfstructureVector[index]."+column + ",tmprec." + column.substr(i2 + 1) + ");";
+    } 
+    else if (opt == "avg"){
+        cmd = "avgmfstructureVector[index]." + column + "=" + "mfstructureVector[index]."+column.substr(0, i1) + "_sum_" + column.substr(i2 + 1) + "/" + "mfstructureVector[index]."+column.substr(0, i1) + "_count_" + column.substr(i2 + 1) + ";";
+    }
+    return cmd;
+
+}
