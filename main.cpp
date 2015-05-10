@@ -14,18 +14,10 @@
 using namespace std;
 
 
-/*flag*/
-int f_input_file = 0;
-int f_input_manuly = 0;
-int f_execute_output = 0;
-
-
-
-
 static void
 usage(void)
 {
-    (void)fprintf(stderr, "Usage: cs562  [-f input file name] [-o output file name]\n");
+    (void)fprintf(stderr, "Usage: cs562  [-f input file name] [-o output file name] [-t table name]\n");
     exit(0);
 }
 
@@ -35,17 +27,19 @@ int main(int argc, char **argv) {
     char ch;
     string input_file="input";
     string filename = "output";
+    string table = "sales";
     int output_num = 1;
 
-    while ((ch = getopt(argc, argv, "f:o:")) != -1){
+    while ((ch = getopt(argc, argv, "f:o:t:")) != -1){
         switch (ch){
         case 'f':
-            f_input_file = 1;
-            f_input_manuly = 0;
             input_file = string(optarg);
             break;
         case 'o':
             filename = string(optarg);
+            break;
+        case 't':
+            table = string(optarg);
             break;
         default:
             usage();
@@ -64,9 +58,9 @@ int main(int argc, char **argv) {
     PGresult        *res;
     int             rec_count;
     int             row;
- //   int             col;
+
     string query;
-    string table = "sales";
+    
     string dbname = "cs562";
     string host = "localhost";
     string user = "postgres";
