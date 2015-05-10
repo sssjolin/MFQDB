@@ -61,7 +61,10 @@ void writeMFstruct(const vector<string> &mfstructure, string output_file, unorde
         string tmptype = "int";
         if (information_schema.find(s) != information_schema.end())
             tmptype = information_schema[s];
-        outputfile << "\t" << tmptype << "\t" << s << ";"<< endl;
+        outputfile << "\t" << tmptype << "\t" << s;
+        if (tmptype == "int")
+            outputfile << "=0";
+        outputfile<<";"<< endl;
     }
     outputfile << "};" << endl;
     outputfile << "unordered_map<string,vector<int>> mfstructureMap;"<<endl;
@@ -73,7 +76,8 @@ void writeMFstruct(const vector<string> &mfstructure, string output_file, unorde
 void writeScan(int groupingVariables, string output_file, 
     unordered_map<string, string> &information_schema,
     vector<string> &recVector,  vector<string> &mfstructure,
-    vector<string> &groupingAttributes, string dbconnection){
+    vector<string> &groupingAttributes, string dbconnection,
+    vector<string> &selectAttribute, string havingCondition){
     ofstream outputfile(output_file, ofstream::app | ofstream::ate);
     outputfile << "int main(){"<<endl;
     outputfile << dbconnection;
@@ -120,20 +124,22 @@ void writeScan(int groupingVariables, string output_file,
     outputfile << "\t\t\tif(groupingVariables)" << endl;
 
     outputfile << "\t\t\t\tupdateMFStruct(tmprec,groupingVariables);" << endl;
-    outputfile << "\t\t}" << endl;/*
-    outputfile << "\t\tif(groupingVariables){" << endl;
-    outputfile << "\t\t\tfor(auto mfstruct:mfstructureVector){" << endl;
-    for (auto column : mfstructure){
-
-    }
-
-
-    outputfile << "\t\t\t}" << endl;
-    outputfile << "\t\t}" << endl;*/
-
-
-    
+    outputfile << "\t\t}" << endl;
     outputfile << "\t}" << endl;
+
+    outputfile << "\tcout<<\"";
+    for (auto s : selectAttribute)
+        outputfile << s << "\\t\\t";
+    outputfile << "\"<<endl;" << endl;
+    outputfile << "\tfor(int i=0;i<mfstructureVector.size();++i){" << endl;
+    if (!havingCondition.empty())
+        outputfile << "\t\tif(" << havingCondition << ")" << endl;
+    outputfile << "\t\t\tcout<<";
+    for (auto s : selectAttribute)
+        outputfile << "mfstructureVector[i]."<<s << "<<\"\\t\\t\"<<";
+    outputfile << "endl;" << endl;
+    outputfile << "\t}" << endl;
+
     outputfile << "\tPQclear(res);" << endl;
     outputfile << "\tPQfinish(conn);" << endl;
     outputfile << "\treturn 0;" << endl;
@@ -170,6 +176,8 @@ int inputparse(string input_file, string output_file,
     vector<string> mfstructure;
     while (!inputfile.eof()){
         getline(inputfile, cmd);
+        if (cmd.empty())
+            break;
         for (int i = index; i < initcmd.size(); ++i){
             if (cmd == initcmd[i]){
                 index=i+1;
@@ -213,10 +221,10 @@ int inputparse(string input_file, string output_file,
     selectionHandler(output_file, selectCondition, groupingVariables,
         groupingAttributes, mfstructure, information_schema);
 
-    
-    
+ 
+    havingCondition = converHavingToCmd(havingCondition, mfstructure);
 
-    writeScan(groupingVariables, output_file, information_schema, recVector, mfstructure, groupingAttributes, dbconnection);
+    writeScan(groupingVariables, output_file, information_schema, recVector, mfstructure, groupingAttributes, dbconnection, selectAttribute,havingCondition);
 
 
 

@@ -138,3 +138,25 @@ string functionHandler(string column){
     return cmd;
 
 }
+
+
+string converHavingToCmd(string s, vector<string> &mfstructure){
+    size_t found;
+    vector<string> replaceList({ "and", "&&", "or", "||", "=", "==", "<>", "!=", "'", "\"" });
+    for (int i = 0; i < replaceList.size(); i += 2){
+        found = s.find(replaceList[i]);
+        while (found != string::npos){
+            s.replace(found, replaceList[i].size(), replaceList[i + 1]);
+            found = s.find(replaceList[i], found + replaceList[i + 1].size());
+        }
+    }
+    for (auto mfAttribute : mfstructure){
+        found = s.find(mfAttribute);
+        while (found != string::npos){
+            s.insert(found, "mfstructureVector[i].");
+            found = s.find(mfAttribute, found + 22);
+        }
+    }
+    return s;
+
+}

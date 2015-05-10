@@ -25,7 +25,7 @@ int f_execute_output = 0;
 static void
 usage(void)
 {
-    (void)fprintf(stderr, "Usage: cs562 [-m (input manuly)] [-e (output query result)] [-f input file name] [-o output file name]\n");
+    (void)fprintf(stderr, "Usage: cs562  [-f input file name] [-o output file name]\n");
     exit(0);
 }
 
@@ -37,19 +37,12 @@ int main(int argc, char **argv) {
     string filename = "output";
     int output_num = 1;
 
-    while ((ch = getopt(argc, argv, "f:meo:")) != -1){
+    while ((ch = getopt(argc, argv, "f:o:")) != -1){
         switch (ch){
         case 'f':
             f_input_file = 1;
             f_input_manuly = 0;
             input_file = string(optarg);
-            break;
-        case 'm':
-            f_input_file = 0;
-            f_input_manuly = 1;
-            break;
-        case 'e':
-            f_execute_output = 1;
             break;
         case 'o':
             filename = string(optarg);
