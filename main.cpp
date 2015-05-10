@@ -17,7 +17,7 @@ using namespace std;
 static void
 usage(void)
 {
-    (void)fprintf(stderr, "Usage: cs562  [-f input file name] [-o output file name] [-t table name]\n");
+    (void)fprintf(stderr, "Usage: cs562  [-f input file name] [-o output file name] [-t table name] [-d database name] [-h host] [-u user name] [-p password]\n");
     exit(0);
 }
 
@@ -28,9 +28,13 @@ int main(int argc, char **argv) {
     string input_file="input";
     string filename = "output";
     string table = "sales";
+    string dbname = "cs562";
+    string host = "localhost";
+    string user = "postgres";
+    string password = "cs562final";
     int output_num = 1;
 
-    while ((ch = getopt(argc, argv, "f:o:t:")) != -1){
+    while ((ch = getopt(argc, argv, "f:o:t:d:h:u:p:h")) != -1){
         switch (ch){
         case 'f':
             input_file = string(optarg);
@@ -40,6 +44,18 @@ int main(int argc, char **argv) {
             break;
         case 't':
             table = string(optarg);
+            break;
+        case 'd':
+            dbname = string(optarg);
+            break;
+        case 'h':
+            host = string(optarg);
+            break;
+        case 'u':
+            user = string(optarg);
+            break;
+        case 'p':
+            password = string(optarg);
             break;
         default:
             usage();
@@ -61,10 +77,7 @@ int main(int argc, char **argv) {
 
     string query;
     
-    string dbname = "cs562";
-    string host = "localhost";
-    string user = "postgres";
-    string password = "cs562final";
+    
     unordered_map<string, string> information_schema;
     vector<string> recVector;
     
