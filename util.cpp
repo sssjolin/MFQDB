@@ -43,6 +43,8 @@ vector<string> generateMFstruct(const vector<string> &selectAttribute,const vect
             tmp.replace(tmp.find("sum"), 3, "count");
             mfSet.insert(tmp);
         }
+        else
+            mfSet.insert(s);
     }
     for (auto s : selectAttribute)
         mfSet.erase(s);
@@ -159,8 +161,12 @@ string converHavingToCmd(string s, vector<string> &mfstructure){
     for (auto mfAttribute : mfstructure){
         found = s.find(mfAttribute);
         while (found != string::npos){
-            s.insert(found, "mfstructureVector[i].");
-            found = s.find(mfAttribute, found + 22);
+            if (s[found - 1] == '_')
+                found = s.find(mfAttribute, found + 1);
+            else{
+                s.insert(found, "mfstructureVector[i].");
+                found = s.find(mfAttribute, found + 22);
+            }
         }
     }
     return s;
